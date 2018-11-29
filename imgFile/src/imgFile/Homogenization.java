@@ -86,6 +86,10 @@ public Homogenization(String title){
     JMenuItem balanceMenuItem=new JMenuItem("均衡化");
     operateMenu.add(balanceMenuItem);
     balanceMenuItem.addActionListener(new BalanceActionListener());
+    
+    JMenuItem equalizationMenuItem=new JMenuItem("直方圖等化");
+    operateMenu.add(equalizationMenuItem);
+    equalizationMenuItem.addActionListener(new EqualizationActionListener());
  
     JMenuItem histogramMenuItem=new JMenuItem("轉換成直方圖");
     operateMenu.add(histogramMenuItem);
@@ -147,6 +151,18 @@ private class BalanceActionListener implements ActionListener{
 
     public void actionPerformed(ActionEvent e){
      int[] resultArray=balance(currentPixArray);
+     imageStack.addLast(resultArray);
+     currentPixArray=resultArray;
+     showImage(resultArray);
+     tempImageStack.clear();
+    }
+ 
+}
+
+private class EqualizationActionListener implements ActionListener{
+
+    public void actionPerformed(ActionEvent e){
+     int[] resultArray=equalization(currentPixArray);
      imageStack.addLast(resultArray);
      currentPixArray=resultArray;
      showImage(resultArray);
@@ -252,11 +268,46 @@ private int[] balance(int[] srcPixArray){
       }
       return dinPixArray;
 }
-
+//直方圖等化
+private int[] equalization(int[] srcPixArray){
+    int[] histogram=new int[256];
+    int[] dinPixArray=new int[w*h];
+     
+    //獲取圖象的直方圖
+    for(int i=0;i<h;i++){
+     for(int j=0;j<w;j++){
+      int grey=srcPixArray[i*w+j]&0xff;
+      histogram[grey]++;
+     }
+    }
+    //直方圖等化
+    double a=(double)255/(w*h);
+    double[] c=new double[256];
+    c[0]=(a*histogram[0]);
+    for(int i=1;i<256;i++){
+     c[i]=c[i-1]+(int)(a*histogram[i]);
+    }
+    for(int i=0;i<h;i++){
+     for(int j=0;j<w;j++){
+      int grey=srcPixArray[i*w+j]&0x0000ff;
+      int hist=(int)c[grey];
+   
+      dinPixArray[i*w+j]=255<<24|hist<<16|hist<<8|hist;
+     }
+    }
+    return dinPixArray;
+}
 //直方圖
 private BufferedImage turnHistogram(int[] ImageSource) {
 	int[] histogram=new int[256];
- 
+	int[] dinPixArray=new int[w*h];
+	
+	for(int i=0;i<h;i++){
+	     for(int j=0;j<w;j++){
+	      int grey=ImageSource[i*w+j]&0xff;
+	      histogram[grey]++;
+	     }
+	    }
     int size=300;   
     BufferedImage pic = new BufferedImage(size,size, BufferedImage.TYPE_4BYTE_ABGR);
     Graphics2D g2d = pic.createGraphics();  
