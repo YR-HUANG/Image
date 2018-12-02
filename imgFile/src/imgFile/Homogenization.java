@@ -273,20 +273,25 @@ private int[] equalization(int[] srcPixArray){
     int[] histogram=new int[256];
     int[] dinPixArray=new int[w*h];
      
-    //獲取圖象的直方圖
+    //計算每一個灰度級的像素數
     for(int i=0;i<h;i++){
      for(int j=0;j<w;j++){
       int grey=srcPixArray[i*w+j]&0xff;
       histogram[grey]++;
      }
     }
-    //直方圖等化
+  //直方圖均衡化
     double a=(double)255/(w*h);
     double[] c=new double[256];
     c[0]=(a*histogram[0]);
     for(int i=1;i<256;i++){
-     c[i]=c[i-1]+(int)(a*histogram[i]);
+    	if(c[i-1]+Math.round(a*(histogram[i]))>255) {
+    		c[i]=255;
+    	}else {
+    		c[i]=c[i-1]+Math.round(a*(histogram[i]));
+    	}
     }
+    //轉換成圖片
     for(int i=0;i<h;i++){
      for(int j=0;j<w;j++){
       int grey=srcPixArray[i*w+j]&0x0000ff;
@@ -295,6 +300,7 @@ private int[] equalization(int[] srcPixArray){
       dinPixArray[i*w+j]=255<<24|hist<<16|hist<<8|hist;
      }
     }
+
     return dinPixArray;
 }
 //直方圖
@@ -311,18 +317,18 @@ private BufferedImage turnHistogram(int[] ImageSource) {
     int size=300;   
     BufferedImage pic = new BufferedImage(size,size, BufferedImage.TYPE_4BYTE_ABGR);
     Graphics2D g2d = pic.createGraphics();  
-    g2d.setPaint(Color.BLACK);  
+    g2d.setPaint(Color.white);  
     g2d.fillRect(0, 0, size, size);  
-    g2d.setPaint(Color.WHITE);  
+    g2d.setPaint(Color.red);  
     g2d.drawLine(5, 250, 265, 250);  	
     g2d.drawLine(5, 250, 5, 5); 	 
-    g2d.setPaint(Color.GREEN);
+    g2d.setPaint(Color.black);
 
 	int max = findMaxValue(histogram);
 	float rate = 200.0f/((float)max);  
     int offset = 2;  
     for(int i=0; i<histogram.length; i++) {  
-        int frequency = (int)(histogram[i] * rate);  
+        int frequency = Math.round((histogram[i] * rate));  
         g2d.drawLine(5 + offset + i, 250, 5 + offset + i, 250-frequency);  
     }  
        
