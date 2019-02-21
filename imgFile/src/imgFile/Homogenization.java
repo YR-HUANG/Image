@@ -370,18 +370,18 @@ private int[] process(int[] srcPixArray){
     histogram[grey]++;
    }
   }
-  //等化後的數值轉成二進位取最後一個值
+  //等化後的數值轉成二進位取最後一個值(LSB)
   double a=(double)255/(w*h);
   double[] c=new double[256];
   c[0]=(a*histogram[0]);
   for(int i=1;i<256;i++){
-  	if(c[i-1]+Math.round(a*(histogram[i]))>255) {
+  	if((c[i-1]+(int)(a*(histogram[i])))%2==1) {
   		c[i]=255;
   	}else {
-  		c[i]=c[i-1]+Math.round(a*(histogram[i]));
-  		System.out.println(c[i]);
+  		c[i]=0;
+  		
   	}
-  	
+  	System.out.println(c[i]);
   }
   //轉換成圖片
   for(int i=0;i<h;i++){
