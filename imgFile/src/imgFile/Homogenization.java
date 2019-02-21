@@ -87,14 +87,21 @@ public Homogenization(String title){
     operateMenu.add(balanceMenuItem);
     balanceMenuItem.addActionListener(new BalanceActionListener());
     
-    JMenuItem equalizationMenuItem=new JMenuItem("直方圖等化");
+    JMenuItem equalizationMenuItem=new JMenuItem("直方圖等化(修正後)");
     operateMenu.add(equalizationMenuItem);
     equalizationMenuItem.addActionListener(new EqualizationActionListener());
  
     JMenuItem histogramMenuItem=new JMenuItem("轉換成直方圖");
     operateMenu.add(histogramMenuItem);
     histogramMenuItem.addActionListener(new HistogramActionListener());
- 
+    
+    
+    JMenu hideMenu=new JMenu("資料隱藏");
+    jb.add(hideMenu);
+    
+    JMenuItem hide=new JMenuItem("處理");
+    hideMenu.add(hide);
+    hide.addActionListener(new ProcessActionListener());
     this.setJMenuBar(jb);
  
     imageLabel=new JLabel("");
@@ -181,6 +188,19 @@ private class HistogramActionListener implements ActionListener{
  
 }
 
+private class ProcessActionListener implements ActionListener{
+
+    public void actionPerformed(ActionEvent e){
+     int[] resultArray=process(currentPixArray);
+     imageStack.addLast(resultArray);
+     currentPixArray=resultArray;
+     showImage(resultArray);
+     tempImageStack.clear();
+    }
+ 
+}
+
+
 
 
 //獲取圖像像素矩陣
@@ -241,7 +261,7 @@ private int[] RGBtoGray(int[] ImageSource){
 }
 
 
-//圖象均勻化
+//直方圖等化(修正後)
 private int[] balance(int[] srcPixArray){
       int[] histogram=new int[256];
       int[] dinPixArray=new int[w*h];
@@ -268,7 +288,7 @@ private int[] balance(int[] srcPixArray){
       }
       return dinPixArray;
 }
-//直方圖等化
+//直方圖等化(wiki作法)
 private int[] equalization(int[] srcPixArray){
     int[] histogram=new int[256];
     int[] dinPixArray=new int[w*h];
@@ -303,7 +323,7 @@ private int[] equalization(int[] srcPixArray){
 
     return dinPixArray;
 }
-//直方圖
+//匯出直方圖
 private BufferedImage turnHistogram(int[] ImageSource) {
 	int[] histogram=new int[256];
 	int[] dinPixArray=new int[w*h];
@@ -319,7 +339,7 @@ private BufferedImage turnHistogram(int[] ImageSource) {
     Graphics2D g2d = pic.createGraphics();  
     g2d.setPaint(Color.white);  
     g2d.fillRect(0, 0, size, size);  
-    g2d.setPaint(Color.red);  
+    g2d.setPaint(Color.black);  
     g2d.drawLine(5, 250, 265, 250);  	
     g2d.drawLine(5, 250, 5, 5); 	 
     g2d.setPaint(Color.black);
@@ -337,6 +357,43 @@ private BufferedImage turnHistogram(int[] ImageSource) {
     
     return pic;
 
+}
+//轉成二進位
+private int[] process(int[] srcPixArray){
+  int[] histogram=new int[256];
+  int[] dinPixArray=new int[w*h];
+   
+  //計算每一個灰度級的像素數
+  for(int i=0;i<h;i++){
+   for(int j=0;j<w;j++){
+    int grey=srcPixArray[i*w+j]&0xff;
+    histogram[grey]++;
+   }
+  }
+  //等化後的數值轉成二進位取最後一個值
+  double a=(double)255/(w*h);
+  double[] c=new double[256];
+  c[0]=(a*histogram[0]);
+  for(int i=1;i<256;i++){
+  	if(c[i-1]+Math.round(a*(histogram[i]))>255) {
+  		c[i]=255;
+  	}else {
+  		c[i]=c[i-1]+Math.round(a*(histogram[i]));
+  		System.out.println(c[i]);
+  	}
+  	
+  }
+  //轉換成圖片
+  for(int i=0;i<h;i++){
+   for(int j=0;j<w;j++){
+    int grey=srcPixArray[i*w+j]&0x0000ff;
+    int hist=(int)c[grey];
+ 
+    dinPixArray[i*w+j]=255<<24|hist<<16|hist<<8|hist;
+   }
+  }
+
+  return dinPixArray;
 }
 private int findMaxValue(int[] histogram) {
 	int max = -1;
